@@ -43,39 +43,12 @@ main :: proc() {
         if raylib.IsKeyDown(raylib.KeyboardKey.RIGHT) {
             delta_x += paddle_speed
         }
-
         // Handle motion - first, the paddle:
         paddle.x += delta_x
-        // Paddle collision is easy, since the paddle can only collide with the vertical borders of the window.
+        // Paddle boundaries are easy, since the paddle can only collide with the vertical borders of the window.
         paddle.x = clamp(paddle.x, 0, WINDOW_WIDTH - paddle_width)
+        update_ball(&ball, &movement_vector, ball_speed, paddle)
 
-        // Next, the ball:
-        ball += (movement_vector * ball_speed)
-        // Check for collisions: first, with the walls, which just requires a clamp and a reverse of the x component of the movement vector:
-        switch {
-        case ball.x < BALL_RADIUS:
-            ball.x = BALL_RADIUS
-            movement_vector.x *= -1
-        case ball.x > WINDOW_WIDTH:
-            ball.x = WINDOW_WIDTH
-            movement_vector.x *= -1
-        case ball.y < BALL_RADIUS:
-            ball.y = BALL_RADIUS
-            movement_vector.y *= -1
-        case ball.y > WINDOW_HEIGHT:
-            ball.x = WINDOW_WIDTH / 2.0
-            ball.y = WINDOW_HEIGHT / 2.0
-            movement_vector.x = rand.float32_range(-1, 1)
-            movement_vector.y = rand.float32_range(-1, 1)
-            mag = math.sqrt(movement_vector.x * movement_vector.x + movement_vector.y * movement_vector.y)
-            movement_vector.x /= mag
-            movement_vector.y /= mag
-        }
-        // Now we check whether the ball has collided with the paddle:
-        if raylib.CheckCollisionCircleRec({ball.x, ball.y}, BALL_RADIUS, paddle) {
-            movement_vector.x *= -1
-            movement_vector.y *= -1
-        }
 
         // Begin drawing - commenting to create additional visual distinction from surrounding code
         raylib.BeginDrawing()
@@ -89,7 +62,34 @@ main :: proc() {
     os.exit(0)
 }
 
-// TODO
-update_ball :: proc(ball, movement_vec: raylib.Vector2) -> (raylib.Vector2, raylib.Vector2) {
-    return ball, movement_vec
+update_ball :: proc(ball, movement_vector: ^raylib.Vector2, ball_speed: f32, paddle: raylib.Rectangle) -> () {
+
+    // Next, the ball:
+    ball^ += (movement_vector^ * ball_speed)
+    // First we check whether the ball has collided with the paddle:
+    if raylib.CheckCollisionCircleRec({ball.x, ball.y}, BALL_RADIUS, paddle) {
+        movement_vector.x *= -1
+        movement_vector.y *= -1
+    }
+    // Now check for collisions with the walls, which just requires a clamp and a reverse of the x component of the movement vector, aside the bottom wall:
+    switch {
+    case ball.x < BALL_RADIUS:
+        ball.x = BALL_RADIUS
+        movement_vector.x *= -1
+    case ball.x > WINDOW_WIDTH:
+        ball.x = WINDOW_WIDTH
+        movement_vector.x *= -1
+    case ball.y < BALL_RADIUS:
+        ball.y = BALL_RADIUS
+        movement_vector.y *= -1
+    case ball.y > WINDOW_HEIGHT:
+        // Bottom wall = respawn and send it off in a new direction.
+        ball.x = WINDOW_WIDTH / 2.0
+        ball.y = WINDOW_HEIGHT / 2.0
+        movement_vector.x = rand.float32_range(-1, 1)
+        movement_vector.y = rand.float32_range(-1, 1)
+        mag := math.sqrt(movement_vector.x * movement_vector.x + movement_vector.y * movement_vector.y)
+        movement_vector.x /= mag
+        movement_vector.y /= mag
+    }
 }
