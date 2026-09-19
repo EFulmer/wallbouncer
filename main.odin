@@ -1,7 +1,8 @@
 package main
 
+import "core:math"
+import "core:math/rand"
 import "core:os"
-import "core:time"
 import "vendor:raylib"
 
 
@@ -20,23 +21,63 @@ main :: proc() {
         WINDOW_WIDTH / 2.0 - 75.0, WINDOW_HEIGHT - 30, paddle_size[0], paddle_size[1]
     }
 
-    raylib.InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Tope!")
+    score := 0
+
+    // Speed will vary based on difficulty, which is still to come.
+    speed := 2.0
+    initial_x, initial_y := rand.float32_range(-1, 1), rand.float32_range(-1, 1)
+    movement_vector := raylib.Vector2{initial_x, initial_y}
+    mag := math.sqrt(initial_x * initial_x + initial_y * initial_y)
+    movement_vector.x /= mag
+    movement_vector.y /= mag
+
+    raylib.InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "TopeOut!")
     raylib.SetTargetFPS(60)
     for !raylib.WindowShouldClose() {
+        // Check the input
         delta_x : f32 = 0.0
         if raylib.IsKeyDown(raylib.KeyboardKey.LEFT) {
-            delta_x -= 1
+            delta_x -= 3
         }
         if raylib.IsKeyDown(raylib.KeyboardKey.RIGHT) {
-            delta_x += 1
+            delta_x += 3
         }
+
+        // Handle motion - first, the paddle:
         paddle.x += delta_x
+        // Paddle collision is easy, since the paddle can only collide with the vertical borders of the window.
         paddle.x = clamp(paddle.x, 0, WINDOW_WIDTH - paddle_width)
+
+        // Next, the ball:
+        ball += movement_vector
+        // Check for collisions: first, with the walls, which just requires a clamp and a reverse of the x component of the movement vector:
+        switch {
+        case ball.x < 0:
+            ball.x = 0
+            movement_vector.x *= -1
+        case ball.x > WINDOW_WIDTH:
+            ball.x = WINDOW_WIDTH
+            movement_vector.x *= -1
+        case ball.y < 0:
+            ball.y = 0
+            movement_vector.y *= -1
+        case ball.y > WINDOW_HEIGHT:
+            ball.y = WINDOW_HEIGHT
+            movement_vector.y *= -1
+        }
+        // Now we check whether the ball has collided with the paddle:
+        if raylib.CheckCollisionCircleRec({ball.x, ball.y}, BALL_RADIUS, paddle) {
+            movement_vector.x *= -1
+            movement_vector.y *= -1
+        }
+
+        // Begin drawing - commenting to create additional visual distinction from surrounding code
         raylib.BeginDrawing()
         raylib.ClearBackground(raylib.DARKBLUE)
         raylib.DrawCircleV(ball, BALL_RADIUS, raylib.BEIGE)
         raylib.DrawRectangleRec(paddle, raylib.WHITE)
         raylib.EndDrawing()
+        // End drawing - commenting to create additional visual distinction from surrounding code
     }
     raylib.CloseWindow()
     os.exit(0)
