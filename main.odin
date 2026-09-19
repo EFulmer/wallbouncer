@@ -24,7 +24,8 @@ main :: proc() {
     score := 0
 
     // Speed will vary based on difficulty, which is still to come.
-    speed := 2.0
+    ball_speed : f32 = 4.0
+    paddle_speed : f32 = 5.0
     initial_x, initial_y := rand.float32_range(-1, 1), rand.float32_range(-1, 1)
     movement_vector := raylib.Vector2{initial_x, initial_y}
     mag := math.sqrt(initial_x * initial_x + initial_y * initial_y)
@@ -37,10 +38,10 @@ main :: proc() {
         // Check the input
         delta_x : f32 = 0.0
         if raylib.IsKeyDown(raylib.KeyboardKey.LEFT) {
-            delta_x -= 3
+            delta_x -= paddle_speed
         }
         if raylib.IsKeyDown(raylib.KeyboardKey.RIGHT) {
-            delta_x += 3
+            delta_x += paddle_speed
         }
 
         // Handle motion - first, the paddle:
@@ -49,7 +50,7 @@ main :: proc() {
         paddle.x = clamp(paddle.x, 0, WINDOW_WIDTH - paddle_width)
 
         // Next, the ball:
-        ball += movement_vector
+        ball += (movement_vector * ball_speed)
         // Check for collisions: first, with the walls, which just requires a clamp and a reverse of the x component of the movement vector:
         switch {
         case ball.x < 0:
@@ -59,6 +60,7 @@ main :: proc() {
             ball.x = WINDOW_WIDTH
             movement_vector.x *= -1
         case ball.y < 0:
+            // TODO respawn!
             ball.y = 0
             movement_vector.y *= -1
         case ball.y > WINDOW_HEIGHT:
