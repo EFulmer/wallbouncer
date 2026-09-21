@@ -21,6 +21,7 @@ main :: proc() {
         WINDOW_WIDTH / 2.0 - 75.0, WINDOW_HEIGHT - 30, paddle_size[0], paddle_size[1]
     }
 
+    paused := false
     score := 0
 
     bricks : [4][10]bool
@@ -38,6 +39,10 @@ main :: proc() {
     raylib.InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "TopeOut!")
     raylib.SetTargetFPS(60)
     for !raylib.WindowShouldClose() {
+        if raylib.IsKeyPressed(raylib.KeyboardKey.SPACE) {
+            paused = !paused
+        }
+        if !paused {
         // Check the input
         delta_x : f32 = 0.0
         if raylib.IsKeyDown(raylib.KeyboardKey.LEFT) {
@@ -51,6 +56,7 @@ main :: proc() {
         // Paddle boundaries are easy, since the paddle can only collide with the vertical borders of the window.
         paddle.x = clamp(paddle.x, 0, WINDOW_WIDTH - paddle_width)
         update_ball(&ball, &movement_vector, ball_speed, paddle)
+        }
 
 
         // Begin drawing - commenting to create additional visual distinction from surrounding code
