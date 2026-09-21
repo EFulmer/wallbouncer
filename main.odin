@@ -23,6 +23,9 @@ main :: proc() {
 
     score := 0
 
+    bricks : [4][10]bool
+    bricks = true
+
     // Speed will vary based on difficulty, which is still to come.
     ball_speed : f32 = 4.0
     paddle_speed : f32 = 5.0
@@ -55,6 +58,7 @@ main :: proc() {
         raylib.ClearBackground(raylib.DARKBLUE)
         raylib.DrawCircleV(ball, BALL_RADIUS, raylib.BEIGE)
         raylib.DrawRectangleRec(paddle, raylib.WHITE)
+        draw_bricks(bricks)
         raylib.EndDrawing()
         // End drawing - commenting to create additional visual distinction from surrounding code
     }
@@ -91,5 +95,69 @@ update_ball :: proc(ball, movement_vector: ^raylib.Vector2, ball_speed: f32, pad
         mag := math.sqrt(movement_vector.x * movement_vector.x + movement_vector.y * movement_vector.y)
         movement_vector.x /= mag
         movement_vector.y /= mag
+    }
+}
+
+draw_bricks :: proc(bricks: [4][10]bool) -> () {
+    x_padding := 10.0
+    y_padding := 30.0
+
+    board_height := WINDOW_HEIGHT * .8
+    board_width := WINDOW_WIDTH * .6
+    width := f32(WINDOW_WIDTH - x_padding - board_height) / 10.0
+    height := f32(WINDOW_HEIGHT - y_padding - board_width) / 4.0
+    x_offset : f32 = 0.0
+    y_offset : f32 = 0.0
+    x_stride : f32 = 55
+    y_stride : f32 = 10
+    colors := []raylib.Color{
+        raylib.BEIGE,
+        raylib.BLACK,
+        raylib.BLANK,
+        raylib.BLUE,
+        raylib.BROWN,
+        raylib.DARKBLUE,
+        raylib.DARKBROWN,
+        raylib.DARKGRAY,
+        raylib.DARKGREEN,
+        raylib.DARKPURPLE,
+        raylib.GOLD,
+        raylib.GRAY,
+        raylib.GREEN,
+        raylib.LIGHTGRAY,
+        raylib.LIME,
+        raylib.MAGENTA,
+        raylib.MAROON,
+        raylib.ORANGE,
+        raylib.PINK,
+        raylib.PURPLE,
+        raylib.RAYWHITE,
+        raylib.RED,
+        raylib.SKYBLUE,
+        raylib.VIOLET,
+        raylib.WHITE,
+        raylib.YELLOW
+    }
+    row_colors := [4]raylib.Color{
+        raylib.VIOLET,
+        raylib.MAROON,
+        raylib.RED,
+        raylib.ORANGE,
+    }
+    for i := 0; i < 4; i += 1 {
+        for j := 0; j < 10; j += 1 {
+            if !!bricks[i][j] {
+                brick_rectangle := raylib.Rectangle{
+                    x_stride * f32(j) + x_offset,
+                    y_stride * f32(i) + y_offset,
+                    width,
+                    height
+                }
+                raylib.DrawRectangleRec(
+                    brick_rectangle,
+                    row_colors[i]
+                )
+            }
+        }
     }
 }
