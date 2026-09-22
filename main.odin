@@ -105,17 +105,14 @@ update_ball :: proc(ball, movement_vector: ^raylib.Vector2, ball_speed: f32, pad
 }
 
 draw_bricks :: proc(bricks: [4][10]bool) -> () {
-    x_padding := 10.0
-    y_padding := 30.0
+    spacing : f32 = 1
+    columns : f32 = 10
+    x_margin : f32 = 30
+    y_margin : f32 = 50
+    board_width := WINDOW_WIDTH - (2 * x_margin) - ((columns - 1) * spacing)
+    brick_width := board_width / columns
+    brick_height : f32 = 10
 
-    board_height := WINDOW_HEIGHT * .8
-    board_width := WINDOW_WIDTH * .6
-    width := f32(WINDOW_WIDTH - x_padding - board_height) / 10.0
-    height := f32(WINDOW_HEIGHT - y_padding - board_width) / 4.0
-    x_offset : f32 = 0.0
-    y_offset : f32 = 0.0
-    x_stride : f32 = 55
-    y_stride : f32 = 10
     colors := []raylib.Color{
         raylib.BEIGE,
         raylib.BLACK,
@@ -145,23 +142,23 @@ draw_bricks :: proc(bricks: [4][10]bool) -> () {
         raylib.YELLOW
     }
     row_colors := [4]raylib.Color{
-        raylib.VIOLET,
-        raylib.MAROON,
         raylib.RED,
+        raylib.YELLOW,
         raylib.ORANGE,
+        raylib.LIME,
     }
-    for i := 0; i < 4; i += 1 {
-        for j := 0; j < 10; j += 1 {
-            if !!bricks[i][j] {
+    for row := 0; row < 4; row += 1 {
+        for col := 0; col < 10; col += 1 {
+            if !!bricks[row][col] {
                 brick_rectangle := raylib.Rectangle{
-                    x_stride * f32(j) + x_offset,
-                    y_stride * f32(i) + y_offset,
-                    width,
-                    height
+                    x_margin + f32(col) * (brick_width + spacing),
+                    y_margin + f32(row) * (brick_height + spacing),
+                    brick_width,
+                    brick_height
                 }
                 raylib.DrawRectangleRec(
                     brick_rectangle,
-                    row_colors[i]
+                    row_colors[row]
                 )
             }
         }
