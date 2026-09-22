@@ -24,8 +24,9 @@ main :: proc() {
     paused := false
     score := 0
 
-    bricks : [4][10]bool
-    bricks = true
+    brick_states : [4][10]bool
+    brick_states = true
+    bricks := initialize_bricks()
 
     // Speed will vary based on difficulty, which is still to come.
     ball_speed : f32 = 4.0
@@ -43,19 +44,20 @@ main :: proc() {
             paused = !paused
         }
         if !paused {
-        // Check the input
-        delta_x : f32 = 0.0
-        if raylib.IsKeyDown(raylib.KeyboardKey.LEFT) {
-            delta_x -= paddle_speed
-        }
-        if raylib.IsKeyDown(raylib.KeyboardKey.RIGHT) {
-            delta_x += paddle_speed
-        }
-        // Handle motion - first, the paddle:
-        paddle.x += delta_x
-        // Paddle boundaries are easy, since the paddle can only collide with the vertical borders of the window.
-        paddle.x = clamp(paddle.x, 0, WINDOW_WIDTH - paddle_width)
-        update_ball(&ball, &movement_vector, ball_speed, paddle)
+            // Check the input
+            delta_x : f32 = 0.0
+            if raylib.IsKeyDown(raylib.KeyboardKey.LEFT) {
+                delta_x -= paddle_speed
+            }
+            if raylib.IsKeyDown(raylib.KeyboardKey.RIGHT) {
+                delta_x += paddle_speed
+            }
+            // Handle motion - first, the paddle:
+            paddle.x += delta_x
+            // Paddle boundaries are easy, since the paddle can only collide with the vertical borders of the window.
+            paddle.x = clamp(paddle.x, 0, WINDOW_WIDTH - paddle_width)
+            update_ball(&ball, &movement_vector, ball_speed, paddle)
+            update_brick_states(ball, &brick_states, bricks)
         }
 
 
@@ -64,7 +66,7 @@ main :: proc() {
         raylib.ClearBackground(raylib.DARKBLUE)
         raylib.DrawCircleV(ball, BALL_RADIUS, raylib.BEIGE)
         raylib.DrawRectangleRec(paddle, raylib.WHITE)
-        draw_bricks(bricks)
+        draw_brick_states(brick_states, bricks)
         raylib.EndDrawing()
         // End drawing - commenting to create additional visual distinction from surrounding code
     }
@@ -104,7 +106,30 @@ update_ball :: proc(ball, movement_vector: ^raylib.Vector2, ball_speed: f32, pad
     }
 }
 
-draw_bricks :: proc(bricks: [4][10]bool) -> () {
+initialize_bricks :: proc () -> [4][10]raylib.Rectangle {
+    result : [4][10]raylib.Rectangle
+    spacing : f32 = 1
+    columns : f32 = 10
+    x_margin : f32 = 30
+    y_margin : f32 = 50
+    board_width := WINDOW_WIDTH - (2 * x_margin) - ((columns - 1) * spacing)
+    brick_width := board_width / columns
+    brick_height : f32 = 10
+
+    for row := 0; row < 4; row += 1 {
+        for col := 0; col < 10; col += 1 {
+            result[row][col] = raylib.Rectangle{
+                x_margin + f32(col) * (brick_width + spacing),
+                y_margin + f32(row) * (brick_height + spacing),
+                brick_width,
+                brick_height
+            }
+        }
+    }
+    return result
+}
+
+draw_brick_states :: proc(brick_states: [4][10]bool, bricks: [4][10]raylib.Rectangle) -> () {
     spacing : f32 = 1
     columns : f32 = 10
     x_margin : f32 = 30
@@ -149,17 +174,22 @@ draw_bricks :: proc(bricks: [4][10]bool) -> () {
     }
     for row := 0; row < 4; row += 1 {
         for col := 0; col < 10; col += 1 {
-            if !!bricks[row][col] {
-                brick_rectangle := raylib.Rectangle{
-                    x_margin + f32(col) * (brick_width + spacing),
-                    y_margin + f32(row) * (brick_height + spacing),
-                    brick_width,
-                    brick_height
-                }
+            if !!brick_states[row][col] {
                 raylib.DrawRectangleRec(
-                    brick_rectangle,
+                    bricks[row][col],
                     row_colors[row]
                 )
+            }
+        }
+    }
+}
+
+// Collision subprocedure #2: ball/brick collisions
+update_brick_states :: proc(ball: raylib.Vector2, brick_states: ^[4][10]bool, bricks: [4][10]raylib.Rectangle) -> () {
+    for row := 0; row < 4; row += 1 {
+        for col := 0; col < 10; col += 1 {
+            if !!brick_states[row][col] && raylib.CheckCollisionPointRec(ball, bricks[row][col]) {
+                brick_states[row][col] = false
             }
         }
     }
